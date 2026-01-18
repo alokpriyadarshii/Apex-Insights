@@ -33,6 +33,10 @@ jobs:
 
       - uses: r-lib/actions/setup-renv@v2
 
+      - name: Install lintr
+        run: R -q -e 'install.packages("lintr")'
+
+
       - name: Run tests
         run: R -q -e 'testthat::test_dir("tests/testthat")'
 
