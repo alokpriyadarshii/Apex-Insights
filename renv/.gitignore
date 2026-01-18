@@ -1,0 +1,8 @@
+local/
+cellar/
+lock/
+sandbox/
+# renv managed directories
+library/
+python/
+staging/
