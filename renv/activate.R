@@ -23,7 +23,7 @@ local({
       writeLines(sprintf("- renv took %s to run the autoloader.", format(elapsed)))
       writeLines(sprintf("- Profile: %s", profile))
       print(utils::summaryRprof(profile))
-    }, add = TRUE)
+    }, add = FALSE)
   }
 
   # figure out whether the autoloader is enabled
