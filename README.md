@@ -2,6 +2,14 @@
 
 A reproducible R analytics pipeline for reading raw CSV data, cleaning it, training a baseline linear regression model, generating predictions, and saving artifacts for downstream reporting.
 
+## Preview
+
+<img src="./images/apex-insights-preview-1.png" alt="apex-insights Preview 1" width="100%" />
+
+<img src="./images/apex-insights-preview-2.png" alt="apex-insights Preview 2" width="100%" />
+
+<img src="./images/apex-insights-preview-3.png" alt="apex-insights Preview 3" width="100%" />
+
 ## Overview
 
 Apex-Insights is organized as a lightweight data workflow built around:
