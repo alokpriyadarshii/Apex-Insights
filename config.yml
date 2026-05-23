@@ -1,0 +1,3 @@
+default:
+  artifacts: "artifacts"
+  log_level: "INFO"

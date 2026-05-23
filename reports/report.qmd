@@ -1,0 +1,24 @@
+---
+title: "Project Report"
+format:
+  html:
+    toc: true
+---
+
+## Overview
+
+This is a starter Quarto report.
+
+## Pipeline outputs
+
+- Model artifact: `artifacts/models/model.rds`
+- Predictions: `artifacts/data/preds.rds`
+
+## Notes
+
+Render with:
+
+```r
+# install.packages("quarto") # if needed
+# quarto::quarto_render("reports/report.qmd")
+```

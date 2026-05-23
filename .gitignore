@@ -1,0 +1,19 @@
+# R
+.Rhistory
+.RData
+.Ruserdata
+
+# renv
+renv/library/
+renv/python/
+renv/staging/
+
+# targets
+_targets/
+
+# Artifacts (optional: keep if you want versioned artifacts)
+# artifacts/
+
+# OS
+.DS_Store
+Thumbs.db
