@@ -633,6 +633,120 @@
         padding: 18px;
       }
     }
+
+
+    /* Burgundy redesign: cleaner layout + warmer theme */
+    :root {
+      --bg: #17070f;
+      --bg-2: #2a0d18;
+      --panel: rgba(54, 18, 34, 0.86);
+      --panel-strong: #3a1324;
+      --text: #fff7f8;
+      --muted: #d8a8b4;
+      --line: rgba(255, 205, 213, 0.18);
+      --brand: #9f1239;
+      --brand-2: #f43f5e;
+      --success: #fbbf24;
+      --warning: #f59e0b;
+      --danger: #fb7185;
+      --shadow: 0 24px 80px rgba(40, 5, 20, 0.42);
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 15% 15%, rgba(159, 18, 57, 0.36), transparent 32%),
+        radial-gradient(circle at 82% 8%, rgba(244, 63, 94, 0.22), transparent 34%),
+        linear-gradient(135deg, #16060e 0%, #2a0d18 54%, #3b0d1d 100%);
+    }
+
+    .nav {
+      background: rgba(28, 8, 17, 0.86);
+    }
+
+    .hero {
+      grid-template-columns: 1fr;
+      padding: 68px 0 28px;
+    }
+
+    .hero > div {
+      max-width: 880px;
+    }
+
+    .brand-mark,
+    .button.primary {
+      background: linear-gradient(135deg, var(--brand), var(--brand-2));
+      color: #fff7f8;
+      box-shadow: 0 18px 45px rgba(159, 18, 57, 0.34);
+    }
+
+    .button.secondary {
+      background: rgba(76, 20, 39, 0.62);
+    }
+
+    .eyebrow {
+      color: #ffe4e6;
+      background: rgba(76, 20, 39, 0.62);
+    }
+
+    .pulse {
+      background: #fbbf24;
+      box-shadow: 0 0 0 7px rgba(251, 191, 36, 0.14);
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, #fff7f8, #fb7185 48%, #fbbf24);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero-copy {
+      color: #ffe4e6;
+      max-width: 720px;
+    }
+
+    .feature-card,
+    .panel,
+    .metric-card,
+    .step {
+      background: rgba(54, 18, 34, 0.82);
+      border-color: rgba(255, 205, 213, 0.18);
+    }
+
+    .icon,
+    .step-number {
+      background: rgba(244, 63, 94, 0.13);
+      color: #fecdd3;
+    }
+
+    .drop-zone {
+      border-color: rgba(251, 113, 133, 0.55);
+      background: rgba(159, 18, 57, 0.12);
+      color: #ffe4e6;
+    }
+
+    .drop-zone.dragover {
+      background: rgba(159, 18, 57, 0.22);
+    }
+
+    label,
+    th {
+      color: #fecdd3;
+    }
+
+    th {
+      background: #3a1324;
+    }
+
+    canvas,
+    .code-block,
+    select,
+    input[type="text"],
+    .check-item,
+    .empty-state {
+      background: rgba(24, 6, 14, 0.48);
+    }
+
   </style>
 </head>
 <body>
@@ -645,7 +759,6 @@
       <div class="nav-links" aria-label="Primary navigation">
         <a href="#features">Features</a>
         <a href="#dashboard">Dashboard</a>
-        <a href="#pipeline">Pipeline</a>
         <a href="https://github.com/alokpriyadarshii/Apex-Insights">GitHub</a>
       </div>
     </div>
@@ -654,51 +767,37 @@
   <main id="top">
     <section class="shell hero">
       <div>
-        <div class="eyebrow"><span class="pulse"></span> Static front end integrated with the R analytics workflow</div>
-        <h1><span class="gradient-text">Turn CSV data into instant insight.</span></h1>
+        <div class="eyebrow"><span class="pulse"></span> CSV analytics dashboard</div>
+        <h1><span class="gradient-text">Apex Insights</span></h1>
         <p class="hero-copy">
-          Apex Insights now includes a browser-based analytics dashboard. Upload a CSV, choose the target column, run a baseline linear regression, and inspect metrics, coefficients, predictions, and an actual-vs-predicted chart before running the full R pipeline.
+          Upload a CSV, choose a target column, run regression, and review results instantly.
         </p>
         <div class="actions">
           <a class="button primary" href="#dashboard">Open dashboard</a>
-          <button class="button secondary" type="button" id="copyCommandsHero">Copy R pipeline commands</button>
-        </div>
-      </div>
-
-      <aside class="hero-card" aria-label="Project command preview">
-        <div class="terminal">
-          <div class="terminal-bar">
-            <div class="dots" aria-hidden="true"><span></span><span></span><span></span></div>
-            <span>apex-insights workflow</span>
           </div>
-          <pre><code>renv::restore()
-testthat::test_dir("tests/testthat")
-targets::tar_make()
-quarto::quarto_render("reports/report.qmd")</code></pre>
-        </div>
-      </aside>
+      </div>
     </section>
 
     <section class="shell" id="features">
       <div class="section-heading">
-        <h2>Frontend for the analytics pipeline</h2>
-        <p>Designed for quick demos, portfolio previews, and lightweight model checks without changing the existing R scripts.</p>
+        <h2>Simple CSV analytics</h2>
+        <p>Upload data, run analysis, and view clear metrics.</p>
       </div>
       <div class="grid-3">
         <article class="feature-card">
           <div class="icon">⬆</div>
           <h3>CSV upload</h3>
-          <p>Load your own CSV or the bundled sample data, then choose the modeling target and numeric features.</p>
+          <p>Upload a CSV or use the sample dataset.</p>
         </article>
         <article class="feature-card">
           <div class="icon">∑</div>
           <h3>In-browser model</h3>
-          <p>Runs ordinary least squares directly in JavaScript so the static Vercel deployment remains dependency-free.</p>
+          <p>Run linear regression directly in the browser.</p>
         </article>
         <article class="feature-card">
           <div class="icon">◎</div>
           <h3>Visual results</h3>
-          <p>Review RMSE, MAE, R², coefficients, predictions, and an actual-vs-predicted chart in one clean dashboard.</p>
+          <p>Review metrics, coefficients, and predictions.</p>
         </article>
       </div>
     </section>
@@ -706,7 +805,7 @@ quarto::quarto_render("reports/report.qmd")</code></pre>
     <section class="shell" id="dashboard">
       <div class="section-heading">
         <h2>Interactive dashboard</h2>
-        <p>Use the dashboard for frontend demos and quick sanity checks. The production R workflow remains available through <code>targets</code> and Quarto.</p>
+        <p>Load data, select columns, and run the model.</p>
       </div>
 
       <div class="dashboard">
@@ -714,7 +813,7 @@ quarto::quarto_render("reports/report.qmd")</code></pre>
           <div class="panel-title">
             <div>
               <h3>Dataset controls</h3>
-              <p>Upload a CSV or load the example data from the project.</p>
+              <p>Upload CSV or use sample data.</p>
             </div>
           </div>
 
@@ -745,7 +844,7 @@ quarto::quarto_render("reports/report.qmd")</code></pre>
             <button class="button secondary" type="button" id="resetDashboard">Reset dashboard</button>
           </div>
 
-          <div class="status" id="statusBox">Ready. Start with the sample dataset or upload your own CSV.</div>
+          <div class="status" id="statusBox">Ready. Upload a CSV or load sample data.</div>
         </aside>
 
         <div class="main-workspace">
@@ -790,52 +889,10 @@ quarto::quarto_render("reports/report.qmd")</code></pre>
         </div>
       </div>
     </section>
-
-    <section class="shell" id="pipeline">
-      <div class="section-heading">
-        <h2>Keep the R workflow</h2>
-        <p>The frontend is a polished preview layer. The original reproducible pipeline remains the source of truth for artifacts and reports.</p>
-      </div>
-      <div class="steps">
-        <article class="step">
-          <div class="step-number">1</div>
-          <h3>Read</h3>
-          <p>Load <code>data/raw/input.csv</code> with the existing R input helpers.</p>
-        </article>
-        <article class="step">
-          <div class="step-number">2</div>
-          <h3>Clean</h3>
-          <p>Normalize names, trim strings, and prepare data for modeling.</p>
-        </article>
-        <article class="step">
-          <div class="step-number">3</div>
-          <h3>Train</h3>
-          <p>Fit the baseline linear model through the current targets workflow.</p>
-        </article>
-        <article class="step">
-          <div class="step-number">4</div>
-          <h3>Report</h3>
-          <p>Save model artifacts and render the Quarto report for sharing.</p>
-        </article>
-      </div>
-      <div class="panel" style="margin-top: 16px;">
-        <div class="panel-title">
-          <div>
-            <h3>Local commands</h3>
-            <p>Use these commands when you want to run the full R pipeline locally.</p>
-          </div>
-          <button class="button secondary" type="button" id="copyCommandsBottom">Copy</button>
-        </div>
-        <pre class="code-block" id="commandsBlock"><code>R --vanilla -q -e 'if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv", repos = "https://cloud.r-project.org"); renv::restore()'
-R --vanilla -q -e 'renv::load(); testthat::test_dir("tests/testthat")'
-R --vanilla -q -e 'renv::load(); targets::tar_make()'
-quarto render reports/report.qmd</code></pre>
-      </div>
-    </section>
   </main>
 
   <footer class="footer shell">
-    Built for Apex Insights — a reproducible R analytics project with a static, deployable frontend.
+    Apex Insights — CSV analytics dashboard.
   </footer>
 
   <script>
@@ -1279,12 +1336,12 @@ quarto render reports/report.qmd</code></pre>
     }
 
     async function copyCommands() {
-      const text = elements.commandsBlock.textContent.trim();
+      const text = elements.commandsBlock?.textContent?.trim() || "";
       try {
         await navigator.clipboard.writeText(text);
-        setStatus("Pipeline commands copied to clipboard.");
+        setStatus("Commands copied to clipboard.");
       } catch {
-        setStatus("Copy failed. Select the commands manually from the pipeline section.", true);
+        setStatus("Copy failed.", true);
       }
     }
 
@@ -1295,8 +1352,8 @@ quarto render reports/report.qmd</code></pre>
     });
     elements.runModel.addEventListener("click", runAnalysis);
     elements.resetDashboard.addEventListener("click", () => resetState(true));
-    elements.copyCommandsHero.addEventListener("click", copyCommands);
-    elements.copyCommandsBottom.addEventListener("click", copyCommands);
+    elements.copyCommandsHero?.addEventListener("click", copyCommands);
+    elements.copyCommandsBottom?.addEventListener("click", copyCommands);
 
     elements.file.addEventListener("change", async (event) => {
       const file = event.target.files?.[0];
