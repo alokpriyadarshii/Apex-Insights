@@ -10,19 +10,6 @@ A reproducible R analytics pipeline for reading raw CSV data, cleaning it, train
 
 <img src="./images/apex-insights-preview-3.png" alt="apex-insights Preview 3" width="100%" />
 
-## Overview
-
-Apex-Insights is organized as a lightweight data workflow built around:
-
-- **`targets`** for pipeline orchestration
-- **`renv`** for dependency management
-- **`testthat`** for unit tests
-- **`Quarto`** for reporting
-- **GitHub Actions** for CI checks
-
-The current pipeline reads a raw CSV file, standardizes column names and string values, fits a linear model using `y` as the target, produces predictions, and writes both the model and predictions to the `artifacts/` directory.
-
-
 ## Frontend dashboard
 
 This project now includes a static frontend in `public/index.html` for quick demos and portfolio deployment. The dashboard lets you:
