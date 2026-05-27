@@ -10,7 +10,7 @@ A reproducible R analytics pipeline for reading raw CSV data, cleaning it, train
 
 <img src="./images/apex-insights-preview-3.png" alt="apex-insights Preview 3" width="100%" />
 
-## Frontend dashboard
+## Frontend Dashboard
 
 This project now includes a static frontend in `public/index.html` for quick demos and portfolio deployment. The dashboard lets you:
 
@@ -34,7 +34,7 @@ Then open:
 http://localhost:3000
 ```
 
-## What the project does
+## What The Project Does
 
 The codebase currently implements these core steps:
 
@@ -49,14 +49,14 @@ The codebase currently implements these core steps:
 6. **Write artifacts** to disk as `.rds` files
 7. **Render a report** with Quarto
 
-## Pipeline outputs
+## Pipeline Outputs
 
 After a successful run, the main outputs are:
 
 - `artifacts/models/model.rds` — trained model object
 - `artifacts/data/preds.rds` — generated predictions
 
-## Project structure
+## Project Structure
 
 ```text
 Apex-Insights/
@@ -100,7 +100,7 @@ On macOS with Homebrew:
 brew install r quarto
 ```
 
-## Getting started
+## Getting Started
 
 ### 1. Clone the repository
 
@@ -144,7 +144,7 @@ Or from R:
 R --vanilla -q -e 'renv::load(); quarto::quarto_render("reports/report.qmd")'
 ```
 
-## Input data expectations
+## Input Data Expectations
 
 The default pipeline reads:
 
@@ -186,7 +186,7 @@ This controls:
 - where generated artifacts are written
 - the logging verbosity used during pipeline execution
 
-## Testing and quality checks
+## Testing And Quality Checks
 
 The repository includes:
 
@@ -200,7 +200,7 @@ Run lint locally with:
 R --vanilla -q -e 'renv::load(); lintr::lint_dir("R")'
 ```
 
-## Current implementation notes
+## Current Implementation Notes
 
 This project is a strong starter template for reproducible analytics workflows, but the present implementation is intentionally minimal.
 
@@ -212,7 +212,7 @@ Current characteristics:
 - `features.R` and `utils.R` are scaffold files for future expansion
 - the Quarto report is a starter report and can be extended with plots, metrics, and interpretation
 
-## Suggested next improvements
+## Suggested Next Improvements
 
 Good next steps for the project would be:
 
