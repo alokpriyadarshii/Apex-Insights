@@ -56,36 +56,84 @@ After a successful run, the main outputs are:
 - `artifacts/models/model.rds` — trained model object
 - `artifacts/data/preds.rds` — generated predictions
 
+## Tech Stack
+
+| Category | Technology |
+| --- | --- |
+| Programming Language | R |
+| R Version | R 4.5.2 |
+| Pipeline Orchestration | targets |
+| Dependency Management | renv |
+| Data Processing | tidyverse, dplyr, readr, stringr, janitor |
+| Modeling | Base R stats, Linear Regression with `lm()` |
+| Configuration | config, YAML |
+| Logging | logger |
+| Reporting | Quarto |
+| Artifact Storage | RDS files |
+| Testing | testthat |
+| Linting | lintr |
+| Frontend | HTML, CSS, Vanilla JavaScript |
+| Dashboard Deployment | Vercel |
+| CI/CD | GitHub Actions |
+| Data Format | CSV |
+
 ## Project Structure
 
 ```text
 Apex-Insights/
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+├── artifacts/
+│   ├── data/
+│   │   └── preds.rds
+│   ├── models/
+│   │   └── model.rds
+│   └── reports/
+├── data/
+│   ├── external/
+│   └── raw/
+│       └── input.csv
+├── images/
+│   ├── apex-insights-preview-1.png
+│   ├── apex-insights-preview-2.png
+│   └── apex-insights-preview-3.png
+├── public/
+│   └── index.html
 ├── R/
 │   ├── clean.R
+│   ├── features.R
 │   ├── io_read.R
 │   ├── io_write.R
 │   ├── logging.R
 │   ├── model_score.R
 │   ├── model_train.R
-│   ├── validate.R
-│   ├── features.R
-│   └── utils.R
-├── data/
-│   ├── raw/
-│   │   └── input.csv
-│   └── external/
-├── artifacts/
-│   ├── data/
-│   ├── models/
-│   └── reports/
+│   ├── utils.R
+│   └── validate.R
+├── renv/
+│   └── activate.R
 ├── reports/
+│   ├── sections/
 │   └── report.qmd
+├── scripts/
 ├── tests/
-│   └── testthat/
-├── config.yml
+│   ├── testthat/
+│   │   ├── helper-source.R
+│   │   ├── test-clean.R
+│   │   └── tests/
+│   │       └── testthat/
+│   │           └── test-model-train.R
+│   └── testthat.R
+├── .gitignore
+├── .lintr
+├── .mailmap
+├── .Rprofile
 ├── _targets.R
+├── config.yml
+├── LICENSE
+├── README.md
 ├── renv.lock
-└── README.md
+└── vercel.json
 ```
 
 ## Requirements
