@@ -1,0 +1,9 @@
+transaction_id,customer_id,account_id,merchant_category,transaction_ts,amount,currency,channel,status
+T1001,C001,A100,grocery,2026-05-03T10:15:00Z,84.52,USD,card,posted
+T1002,C002,A200,travel,2026-05-04T13:20:00Z,1250.00,USD,wire,posted
+T1003,C003,A300,utilities,2026-05-07T08:45:00Z,210.12,USD,ach,posted
+T1004,C004,A400,brokerage,2026-05-15T16:30:00Z,4875.35,USD,wire,posted
+T1005,C001,A100,restaurant,2026-06-01T19:05:00Z,132.40,USD,card,posted
+T1006,C002,A200,insurance,2026-06-04T11:55:00Z,690.00,USD,ach,posted
+T1007,C003,A300,grocery,2026-06-06T09:10:00Z,76.28,USD,card,posted
+T1008,C004,A400,travel,2026-06-10T14:42:00Z,2180.50,USD,wire,posted

@@ -1,0 +1,6 @@
+services:
+  lakehouse:
+    build: .
+    command: python -m apex_insights.pipeline
+    volumes:
+      - ./artifacts:/app/artifacts

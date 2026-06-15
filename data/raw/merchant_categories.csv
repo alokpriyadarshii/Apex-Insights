@@ -1,0 +1,7 @@
+merchant_category,category_group,risk_weight
+grocery,essential,0.10
+restaurant,discretionary,0.25
+travel,discretionary,0.40
+utilities,essential,0.05
+brokerage,financial,0.35
+insurance,financial,0.20

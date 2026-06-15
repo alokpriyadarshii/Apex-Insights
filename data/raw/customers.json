@@ -1,0 +1,5 @@
+{"customer_id":"C001","customer_name":"Avery Stone","city":"New York","risk_segment":"medium","risk_score":56.0,"profile_updated_at":"2026-01-10T00:00:00Z"}
+{"customer_id":"C001","customer_name":"Avery Stone","city":"Jersey City","risk_segment":"low","risk_score":38.0,"profile_updated_at":"2026-05-20T00:00:00Z"}
+{"customer_id":"C002","customer_name":"Maya Iyer","city":"Chicago","risk_segment":"high","risk_score":82.0,"profile_updated_at":"2026-02-15T00:00:00Z"}
+{"customer_id":"C003","customer_name":"Noah Chen","city":"San Francisco","risk_segment":"low","risk_score":24.0,"profile_updated_at":"2026-03-18T00:00:00Z"}
+{"customer_id":"C004","customer_name":"Zara Williams","city":"Boston","risk_segment":"medium","risk_score":63.0,"profile_updated_at":"2026-04-22T00:00:00Z"}

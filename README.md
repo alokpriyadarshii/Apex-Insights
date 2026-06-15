@@ -1,6 +1,6 @@
 # Apex-Insights
 
-A reproducible R analytics pipeline for reading raw CSV data, cleaning it, training a baseline linear regression model, generating predictions, and saving artifacts for downstream reporting.
+A reproducible analytics and lakehouse project that combines the original R reporting workflow with a Python + PySpark data platform pipeline. It ingests finance-style raw data, builds bronze/silver/gold datasets, writes optimized Parquet outputs, runs automated data quality controls, reconciles layer totals, and keeps the existing dashboard/reporting assets available for demos.
 
 ## Preview
 
@@ -12,17 +12,9 @@ A reproducible R analytics pipeline for reading raw CSV data, cleaning it, train
 
 ## Frontend Dashboard
 
-This project now includes a static frontend in `public/index.html` for quick demos and portfolio deployment. The dashboard lets you:
+This project includes a static frontend in `public/index.html` for quick demos and portfolio deployment. The dashboard lets you upload a CSV file, load the bundled sample dataset, choose target and feature columns, run a baseline linear regression in JavaScript, and view metrics, coefficients, predictions, and an actual-vs-predicted chart.
 
-- upload a CSV file directly in the browser
-- load the bundled sample dataset
-- choose a numeric target column and feature columns
-- run a baseline linear regression in JavaScript
-- view RMSE, MAE, R², coefficients, predictions, and an actual-vs-predicted chart
-
-The frontend is dependency-free and works with the existing `vercel.json`, so it can be deployed as a static site on Vercel.
-
-To preview it locally:
+Preview it locally:
 
 ```bash
 python3 -m http.server 3000 -d public
@@ -36,102 +28,120 @@ http://localhost:3000
 
 ## What The Project Does
 
-The codebase currently implements these core steps:
+The codebase implements two complementary workflows:
 
-1. **Read raw input** from `data/raw/input.csv`
-2. **Clean the dataset** by:
-   - normalizing column names with `janitor::clean_names()`
-   - converting factor columns to character
-   - trimming whitespace from character values
-3. **Validate required columns** before modeling
-4. **Train a linear regression model** using `stats::lm()`
-5. **Score the model** on the available dataset
-6. **Write artifacts** to disk as `.rds` files
-7. **Render a report** with Quarto
+1. **R analytics pipeline** for model training, scoring, artifact writing, and Quarto reporting.
+2. **Python + PySpark lakehouse pipeline** for distributed data processing and finance-style data engineering.
+
+The PySpark flow follows:
+
+```text
+raw data -> bronze layer -> silver layer -> gold/curated layer -> quality report -> analytics/report
+```
+
+Core PySpark capabilities:
+
+- Ingests raw transaction CSV and customer JSON data.
+- Builds bronze records with standardized timestamps, event dates, source metadata, and ingestion timestamps.
+- Transforms valid records into clean silver datasets.
+- Models customer profile history using SCD Type 2 with surrogate keys, validity ranges, current-record flags, and record hashes.
+- Writes curated datasets in partitioned Parquet format for efficient downstream analytics.
+- Generates automated data quality reports for completeness, accuracy, consistency, uniqueness, freshness, schema validation, and outlier monitoring.
+- Adds reconciliation checks across raw, bronze, silver, and gold layers to verify record counts, amount totals, and rejected-record handling.
+
+The original R workflow still reads `data/raw/input.csv`, cleans the dataset, validates required columns, trains a linear regression model with `stats::lm()`, scores predictions, writes `.rds` artifacts, and renders a Quarto report.
 
 ## Pipeline Outputs
 
-After a successful run, the main outputs are:
+After a successful R pipeline run:
 
-- `artifacts/models/model.rds` — trained model object
-- `artifacts/data/preds.rds` — generated predictions
+- `artifacts/models/model.rds` - trained model object
+- `artifacts/data/preds.rds` - generated predictions
+
+After a successful PySpark pipeline run:
+
+- `artifacts/lakehouse/bronze/transactions_parquet/`
+- `artifacts/lakehouse/bronze/rejected_transactions_parquet/`
+- `artifacts/lakehouse/silver/clean_transactions_parquet/`
+- `artifacts/lakehouse/silver/customer_profile_history_parquet/`
+- `artifacts/lakehouse/silver/transaction_monitoring_features_parquet/`
+- `artifacts/lakehouse/gold/customer_risk_summary_parquet/`
+- `artifacts/lakehouse/gold/monthly_revenue_summary_parquet/`
+- `artifacts/reports/data_quality_report.json`
+- `artifacts/reports/data_quality_report.md`
+- `artifacts/reconciliation/reconciliation_report.csv`
 
 ## Tech Stack
 
 | Category | Technology |
 | --- | --- |
-| Programming Language | R |
+| Programming Language | R, Python |
 | R Version | R 4.5.2 |
-| Pipeline Orchestration | targets |
-| Dependency Management | renv |
-| Data Processing | tidyverse, dplyr, readr, stringr, janitor |
+| Python Version | Python 3.10+ |
+| Pipeline Orchestration | targets, Make |
+| Dependency Management | renv, pip |
+| Data Processing | PySpark, Spark SQL, tidyverse, dplyr, readr, stringr, janitor |
 | Modeling | Base R stats, Linear Regression with `lm()` |
 | Configuration | config, YAML |
 | Logging | logger |
-| Reporting | Quarto |
-| Artifact Storage | RDS files |
-| Testing | testthat |
-| Linting | lintr |
+| Reporting | Quarto, Markdown, JSON |
+| Artifact Storage | Partitioned Parquet, RDS files |
+| Testing | pytest, testthat |
+| Linting | ruff, lintr |
 | Frontend | HTML, CSS, Vanilla JavaScript |
 | Dashboard Deployment | Vercel |
-| CI/CD | GitHub Actions |
-| Data Format | CSV |
+| CI/CD | GitHub Actions, Docker |
+| Data Format | CSV, JSON, Parquet |
 
 ## Project Structure
 
 ```text
 Apex-Insights/
-├── .github/
-│   └── workflows/
-│       └── ci.yml
+├── .github/workflows/ci.yml
 ├── artifacts/
-│   ├── data/
-│   │   └── preds.rds
-│   ├── models/
-│   │   └── model.rds
+│   ├── data/preds.rds
+│   ├── lakehouse/
+│   │   ├── bronze/
+│   │   ├── silver/
+│   │   └── gold/
+│   ├── models/model.rds
+│   ├── reconciliation/
 │   └── reports/
-├── data/
-│   ├── external/
-│   └── raw/
-│       └── input.csv
-├── images/
-│   ├── apex-insights-preview-1.png
-│   ├── apex-insights-preview-2.png
-│   └── apex-insights-preview-3.png
-├── public/
-│   └── index.html
+├── data/raw/
+│   ├── accounts.csv
+│   ├── customers.json
+│   ├── input.csv
+│   ├── merchant_categories.csv
+│   ├── risk_scores.csv
+│   └── transactions.csv
+├── docs/performance_optimization.md
+├── public/index.html
 ├── R/
-│   ├── clean.R
-│   ├── features.R
-│   ├── io_read.R
-│   ├── io_write.R
-│   ├── logging.R
-│   ├── model_score.R
-│   ├── model_train.R
-│   ├── utils.R
-│   └── validate.R
-├── renv/
-│   └── activate.R
-├── reports/
-│   ├── sections/
-│   └── report.qmd
-├── scripts/
+├── reports/report.qmd
+├── sql/
+│   ├── 01_create_tables.sql
+│   ├── 02_data_quality_checks.sql
+│   ├── 03_reconciliation_checks.sql
+│   ├── 04_customer_monthly_summary.sql
+│   ├── 05_window_functions.sql
+│   └── 06_optimization_notes.sql
+├── src/apex_insights/
+│   ├── config.py
+│   ├── ingest.py
+│   ├── model.py
+│   ├── pipeline.py
+│   ├── quality.py
+│   ├── reconcile.py
+│   ├── transform.py
+│   └── write.py
 ├── tests/
-│   ├── testthat/
-│   │   ├── helper-source.R
-│   │   ├── test-clean.R
-│   │   └── tests/
-│   │       └── testthat/
-│   │           └── test-model-train.R
-│   └── testthat.R
-├── .gitignore
-├── .lintr
-├── .mailmap
-├── .Rprofile
-├── _targets.R
-├── config.yml
-├── LICENSE
-├── README.md
+│   ├── python/
+│   └── testthat/
+├── docker-compose.yml
+├── Dockerfile
+├── Makefile
+├── pyproject.toml
+├── requirements.txt
 ├── renv.lock
 └── vercel.json
 ```
@@ -139,13 +149,15 @@ Apex-Insights/
 ## Requirements
 
 - **R** 4.x or later
-- **renv** for restoring the project library
+- **renv** for restoring the R project library
 - **Quarto** for report rendering
+- **Python** 3.10 or later
+- **Java** 17 or later for PySpark
 
 On macOS with Homebrew:
 
 ```bash
-brew install r quarto
+brew install r quarto openjdk@17
 ```
 
 ## Getting Started
@@ -156,31 +168,53 @@ brew install r quarto
 git clone https://github.com/alokpriyadarshii/Apex-Insights.git && cd Apex-Insights
 ```
 
-### 2. Restore project dependencies
+### 2. Restore R dependencies
 
 ```bash
 R --vanilla -q -e 'if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv", repos = "https://cloud.r-project.org"); renv::restore()'
 ```
 
-### 3. Run tests
+### 3. Install Python dependencies
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+### 4. Run tests and linting
 
 ```bash
 R --vanilla -q -e 'renv::load(); testthat::test_dir("tests/testthat")'
+R --vanilla -q -e 'renv::load(); lintr::lint_dir("R")'
+python -m pytest
+python -m ruff check src tests/python
 ```
 
-### 4. Run the pipeline
+### 5. Run the R pipeline
 
 ```bash
 R --vanilla -q -e 'renv::load(); targets::tar_make()'
 ```
 
-### 5. Verify generated artifacts
+### 6. Run the PySpark lakehouse pipeline
+
+```bash
+python -m apex_insights.pipeline
+```
+
+Or:
+
+```bash
+make pipeline
+```
+
+### 7. Verify generated artifacts
 
 ```bash
 ls -1 artifacts/models/model.rds artifacts/data/preds.rds
+make validate-parquet
 ```
 
-### 6. Render the report
+### 8. Render the report
 
 ```bash
 quarto render reports/report.qmd
@@ -194,7 +228,7 @@ R --vanilla -q -e 'renv::load(); quarto::quarto_render("reports/report.qmd")'
 
 ## Input Data Expectations
 
-The default pipeline reads:
+The original R pipeline reads:
 
 ```text
 data/raw/input.csv
@@ -206,68 +240,81 @@ The current training target is hardcoded as:
 y
 ```
 
-All remaining columns are used as features.
+The PySpark lakehouse pipeline reads finance-style sample data from:
 
-Example input format:
-
-```csv
-y,x1,x2
--0.5604756466,2.1988103489,-0.0735560191
--0.2301774895,1.3124129764,-1.1686514244
-1.5587083141,-0.2651450567,-0.6347482649
+```text
+data/raw/transactions.csv
+data/raw/customers.json
+data/raw/accounts.csv
+data/raw/merchant_categories.csv
+data/raw/risk_scores.csv
 ```
 
-## Configuration
+The transaction/customer flow is structured to demonstrate raw, refined, and curated datasets for analytics, reporting, monitoring, and AI use cases.
 
-Project configuration is stored in `config.yml`.
+## SQL Analytics
 
-Current defaults:
+The `sql/` folder contains ANSI-style SQL examples for table creation, data quality checks, reconciliation checks, monthly customer summaries, window functions, and optimization notes. These queries make the SQL troubleshooting and analytics layer visible alongside the executable PySpark implementation.
 
-```yaml
-default:
-  artifacts: "artifacts"
-  log_level: "INFO"
-```
+## Data Quality And Reconciliation
 
-This controls:
+Implemented automated controls for:
 
-- where generated artifacts are written
-- the logging verbosity used during pipeline execution
+- Completeness: no missing `customer_id`, `transaction_id`, or `amount`
+- Accuracy: non-negative amounts, valid currency codes, valid timestamps
+- Consistency: customer IDs exist in the customer profile table
+- Uniqueness: transaction IDs are unique
+- Freshness: latest transaction date is within the expected range
+- Schema: expected columns and data types are present
+- Outliers: unusually high transaction amounts are flagged for review
 
-## Testing And Quality Checks
+Reconciliation checks verify:
 
-The repository includes:
+- raw transaction count equals bronze transaction count
+- bronze valid records plus rejected records equals raw records
+- silver amount totals match bronze valid amount totals
+- gold monthly aggregates reconcile with silver transactions
 
-- **unit tests** in `tests/testthat/`
-- **linting** for the `R/` directory
-- **GitHub Actions CI** to run tests and linting on push and pull request events
+## Performance Optimization
 
-Run lint locally with:
+The PySpark pipeline partitions transaction Parquet datasets by `event_date` and gold summaries by `month`, broadcasts small dimension tables, caches reused Spark DataFrames, selects only required columns for downstream outputs, and keeps denormalized gold tables for repeated analytics queries. Additional notes are in `docs/performance_optimization.md`.
+
+## Docker
+
+Run the PySpark pipeline in a container:
 
 ```bash
-R --vanilla -q -e 'renv::load(); lintr::lint_dir("R")'
+docker compose up --build lakehouse
 ```
+
+Generated outputs are mounted back into `artifacts/`.
+
+## CI/CD
+
+GitHub Actions runs:
+
+- Python dependency installation
+- `python -m ruff check src tests/python`
+- `python -m pytest`
+- `python -m apex_insights.pipeline`
+- generated Parquet and report validation with `make validate-parquet`
+- R tests and R linting
 
 ## Current Implementation Notes
 
-This project is a strong starter template for reproducible analytics workflows, but the present implementation is intentionally minimal.
+This project now demonstrates both analytics workflow fundamentals and data platform engineering:
 
-Current characteristics:
-
-- modeling uses a **single linear regression** via `stats::lm()`
-- scoring is done on the same available dataset
-- validation checks only for required column presence
-- `features.R` and `utils.R` are scaffold files for future expansion
-- the Quarto report is a starter report and can be extended with plots, metrics, and interpretation
+- the R pipeline keeps the original reproducible model/report workflow
+- the PySpark pipeline adds bronze/silver/gold lakehouse layers, partitioned Parquet outputs, automated data quality, reconciliation, and SCD Type 2 customer history
+- SQL files show practical querying, troubleshooting, window functions, and optimization patterns
+- CI validates the Python pipeline outputs on every push and pull request
 
 ## Suggested Next Improvements
 
 Good next steps for the project would be:
 
-- add a train/test split or cross-validation
+- add a train/test split or cross-validation to the R model
 - introduce richer feature engineering in `R/features.R`
-- track evaluation metrics such as RMSE, MAE, or R²
-- add visualizations to the Quarto report
-- parameterize the target column and input path
-- add stronger schema and missing-value validation
-
+- add visualizations over the generated gold Parquet datasets
+- parameterize the PySpark source and output paths for multiple environments
+- add incremental load examples with file compaction and late-arriving data handling

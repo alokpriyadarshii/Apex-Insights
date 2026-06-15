@@ -13,6 +13,15 @@ _targets/
 
 # Artifacts (optional: keep if you want versioned artifacts)
 # artifacts/
+artifacts/lakehouse/
+artifacts/reports/
+artifacts/reconciliation/
+
+# Python
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
 
 # OS
 .DS_Store

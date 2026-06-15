@@ -1,0 +1,5 @@
+customer_id,score_date,risk_score,risk_segment
+C001,2026-05-31,38,low
+C002,2026-05-31,82,high
+C003,2026-05-31,24,low
+C004,2026-05-31,63,medium
