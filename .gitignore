@@ -14,7 +14,9 @@ _targets/
 # Artifacts (optional: keep if you want versioned artifacts)
 # artifacts/
 artifacts/lakehouse/
-artifacts/reports/
+artifacts/reports/*
+!artifacts/reports/.gitkeep
+!artifacts/reports/model_validation_report.md
 artifacts/reconciliation/
 
 # Python

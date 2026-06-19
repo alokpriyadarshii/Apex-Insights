@@ -1,6 +1,6 @@
 # Apex-Insights
 
-A reproducible analytics and lakehouse project that combines the original R reporting workflow with a Python + PySpark data platform pipeline. It ingests finance-style raw data, builds bronze/silver/gold datasets, writes optimized Parquet outputs, runs automated data quality controls, reconciles layer totals, and keeps the existing dashboard/reporting assets available for demos.
+A reproducible analytics and lakehouse project that combines the original R reporting workflow with a Python + PySpark data platform pipeline. It ingests finance-style raw data, builds bronze/silver/gold datasets, writes optimized Parquet outputs, runs automated data quality controls, reconciles layer totals, and adds fraud/credit-risk model validation with threshold tuning, score stability, feature importance, and review decision rules.
 
 ## Preview
 
@@ -49,7 +49,7 @@ Core PySpark capabilities:
 - Generates automated data quality reports for completeness, accuracy, consistency, uniqueness, freshness, schema validation, and outlier monitoring.
 - Adds reconciliation checks across raw, bronze, silver, and gold layers to verify record counts, amount totals, and rejected-record handling.
 
-The original R workflow still reads `data/raw/input.csv`, cleans the dataset, validates required columns, trains a linear regression model with `stats::lm()`, scores predictions, writes `.rds` artifacts, and renders a Quarto report.
+The original R workflow still reads `data/raw/input.csv`, cleans the dataset, validates required columns, trains a linear regression model with `stats::lm()`, scores predictions, writes `.rds` artifacts, and renders a Quarto report. It now also creates a demo binary risk flag from the starter target, trains a logistic-regression validation model, optionally trains Random Forest and XGBoost challengers when those packages are installed, and writes a model validation report.
 
 ## Pipeline Outputs
 
@@ -57,6 +57,7 @@ After a successful R pipeline run:
 
 - `artifacts/models/model.rds` - trained model object
 - `artifacts/data/preds.rds` - generated predictions
+- `artifacts/reports/model_validation_report.md` - fraud/credit-risk validation report
 
 After a successful PySpark pipeline run:
 
@@ -81,7 +82,7 @@ After a successful PySpark pipeline run:
 | Pipeline Orchestration | targets, Make |
 | Dependency Management | renv, pip |
 | Data Processing | PySpark, Spark SQL, tidyverse, dplyr, readr, stringr, janitor |
-| Modeling | Base R stats, Linear Regression with `lm()` |
+| Modeling | Base R stats, Linear Regression with `lm()`, Logistic Regression with `glm()`, optional Random Forest/XGBoost challengers |
 | Configuration | config, YAML |
 | Logging | logger |
 | Reporting | Quarto, Markdown, JSON |
@@ -275,6 +276,22 @@ Reconciliation checks verify:
 - silver amount totals match bronze valid amount totals
 - gold monthly aggregates reconcile with silver transactions
 
+## Fraud And Credit-Risk Model Validation
+
+The R workflow includes a reusable validation layer in `R/model_validation.R` for binary fraud, default, or credit-risk targets. The starter dataset only contains a continuous `y` column, so the targets pipeline creates a demonstration `fraud_flag` by marking observations at or above the median as high risk. If a real 0/1 risk label is supplied, the same functions validate it directly.
+
+Validation capabilities:
+
+- Logistic Regression baseline with `stats::glm()`
+- optional Random Forest challenger when `randomForest` is installed
+- optional XGBoost challenger when `xgboost` is installed
+- ROC-AUC, PR-AUC, KS score, and PSI
+- confusion matrix metrics across tuned thresholds
+- threshold tuning using F1 by default
+- feature importance output for supported models
+- approve, investigate, and reject decision rules
+- Markdown validation report written to `artifacts/reports/model_validation_report.md`
+
 ## Performance Optimization
 
 The PySpark pipeline partitions transaction Parquet datasets by `event_date` and gold summaries by `month`, broadcasts small dimension tables, caches reused Spark DataFrames, selects only required columns for downstream outputs, and keeps denormalized gold tables for repeated analytics queries. Additional notes are in `docs/performance_optimization.md`.
@@ -305,6 +322,7 @@ GitHub Actions runs:
 This project now demonstrates both analytics workflow fundamentals and data platform engineering:
 
 - the R pipeline keeps the original reproducible model/report workflow
+- fraud/credit-risk validation adds Logistic Regression, optional Random Forest/XGBoost, ROC-AUC, PR-AUC, KS score, PSI, confusion matrix, threshold tuning, feature importance, and reject/investigate rules
 - the PySpark pipeline adds bronze/silver/gold lakehouse layers, partitioned Parquet outputs, automated data quality, reconciliation, and SCD Type 2 customer history
 - SQL files show practical querying, troubleshooting, window functions, and optimization patterns
 - CI validates the Python pipeline outputs on every push and pull request
@@ -313,7 +331,7 @@ This project now demonstrates both analytics workflow fundamentals and data plat
 
 Good next steps for the project would be:
 
-- add a train/test split or cross-validation to the R model
+- add cross-validation folds for challenger model comparison
 - introduce richer feature engineering in `R/features.R`
 - add visualizations over the generated gold Parquet datasets
 - parameterize the PySpark source and output paths for multiple environments
