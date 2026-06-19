@@ -739,7 +739,7 @@
       <div>
         <h1><span class="gradient-text">Apex Insights</span></h1>
         <p class="hero-copy">
-          Upload a CSV, explore model results, and use the backend workflow for fraud and credit-risk validation.
+          Upload a CSV, validate fraud and credit-risk scores, tune thresholds, and review model decisions.
         </p>
         <div class="actions">
           <a class="button primary" href="#dashboard">Open dashboard</a>
@@ -772,7 +772,7 @@
 
     <section class="shell" id="dashboard">
       <div class="section-heading">
-        <h2>Interactive dashboard</h2>
+        <h2>Dashboard</h2>
       </div>
 
       <div class="dashboard">
@@ -800,6 +800,14 @@
           </div>
 
           <div class="form-row">
+            <label for="analysisType">Analysis type</label>
+            <select id="analysisType">
+              <option value="risk">Fraud / credit-risk validation</option>
+              <option value="regression">Linear regression</option>
+            </select>
+          </div>
+
+          <div class="form-row">
             <label>Feature columns</label>
             <div class="checklist" id="featureList">
               <div class="status">Load a dataset to select numeric features.</div>
@@ -807,7 +815,7 @@
           </div>
 
           <div class="button-row">
-            <button class="button primary" type="button" id="runModel" disabled>Run analysis</button>
+            <button class="button primary" type="button" id="runModel" disabled>Run validation</button>
             <button class="button secondary" type="button" id="resetDashboard">Reset dashboard</button>
           </div>
 
@@ -826,8 +834,8 @@
             <section class="panel" aria-label="Actual versus predicted chart">
               <div class="panel-title">
                 <div>
-                  <h3>Actual vs predicted</h3>
-                  <p>Points closer to the diagonal line indicate better predictions.</p>
+                  <h3 id="chartTitle">Risk score distribution</h3>
+                  <p id="chartSubtitle">Scores at or above the tuned threshold move into review.</p>
                 </div>
               </div>
               <canvas id="chart" width="760" height="420"></canvas>
@@ -836,22 +844,22 @@
             <section class="panel" aria-label="Model coefficients">
               <div class="panel-title">
                 <div>
-                  <h3>Model coefficients</h3>
-                  <p>Estimated contribution for the intercept and selected features.</p>
+                  <h3 id="coefficientsTitle">Feature importance</h3>
+                  <p id="coefficientsSubtitle">Logistic coefficients ranked by absolute contribution.</p>
                 </div>
               </div>
-              <div id="coefficients" class="empty-state">Run an analysis to view coefficients.</div>
+              <div id="coefficients" class="empty-state">Run validation to view feature importance.</div>
             </section>
           </div>
 
           <section class="panel" style="margin-top: 14px;" aria-label="Predictions table">
             <div class="panel-title">
               <div>
-                <h3>Prediction preview</h3>
-                <p>First rows from the scored dataset.</p>
+                <h3 id="predictionTitle">Decision preview</h3>
+                <p id="predictionSubtitle">First rows from the scored risk dataset.</p>
               </div>
             </div>
-            <div id="predictionTable" class="empty-state">Predictions will appear here after the model runs.</div>
+            <div id="predictionTable" class="empty-state">Decisions will appear here after validation runs.</div>
           </section>
         </div>
       </div>
@@ -893,6 +901,7 @@
       dropZone: document.getElementById("dropZone"),
       loadSample: document.getElementById("loadSample"),
       targetColumn: document.getElementById("targetColumn"),
+      analysisType: document.getElementById("analysisType"),
       featureList: document.getElementById("featureList"),
       runModel: document.getElementById("runModel"),
       resetDashboard: document.getElementById("resetDashboard"),
@@ -901,6 +910,12 @@
       coefficients: document.getElementById("coefficients"),
       predictionTable: document.getElementById("predictionTable"),
       chart: document.getElementById("chart"),
+      chartTitle: document.getElementById("chartTitle"),
+      chartSubtitle: document.getElementById("chartSubtitle"),
+      coefficientsTitle: document.getElementById("coefficientsTitle"),
+      coefficientsSubtitle: document.getElementById("coefficientsSubtitle"),
+      predictionTitle: document.getElementById("predictionTitle"),
+      predictionSubtitle: document.getElementById("predictionSubtitle"),
       commandsBlock: document.getElementById("commandsBlock"),
       copyCommandsHero: document.getElementById("copyCommandsHero"),
       copyCommandsBottom: document.getElementById("copyCommandsBottom")
@@ -1034,6 +1049,90 @@
         .filter((row) => Number.isFinite(row.y) && row.x.every(Number.isFinite));
     }
 
+    function buildRiskFrame(target, features) {
+      const numericRows = buildModelFrame(target, features);
+      const uniqueTargets = [...new Set(numericRows.map((row) => row.y))].sort((a, b) => a - b);
+      const isBinary = uniqueTargets.length === 2 && uniqueTargets.every((value) => value === 0 || value === 1);
+      const cutoff = median(numericRows.map((row) => row.y));
+
+      return numericRows.map((row) => ({
+        ...row,
+        actual: isBinary ? row.y : Number(row.y >= cutoff)
+      }));
+    }
+
+    function median(values) {
+      const sorted = [...values].sort((a, b) => a - b);
+      const middle = Math.floor(sorted.length / 2);
+      if (sorted.length % 2 === 0) return (sorted[middle - 1] + sorted[middle]) / 2;
+      return sorted[middle];
+    }
+
+    function sigmoid(value) {
+      if (value >= 0) {
+        const z = Math.exp(-value);
+        return 1 / (1 + z);
+      }
+      const z = Math.exp(value);
+      return z / (1 + z);
+    }
+
+    function standardizeFrame(frame) {
+      const featureCount = frame[0].x.length;
+      const means = Array(featureCount).fill(0);
+      const scales = Array(featureCount).fill(1);
+
+      for (let index = 0; index < featureCount; index += 1) {
+        const values = frame.map((row) => row.x[index]);
+        const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+        const variance = values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / values.length;
+        means[index] = mean;
+        scales[index] = Math.sqrt(variance) || 1;
+      }
+
+      return frame.map((row) => ({
+        ...row,
+        standardizedX: row.x.map((value, index) => (value - means[index]) / scales[index])
+      }));
+    }
+
+    function fitLogisticRegression(frame) {
+      const standardized = standardizeFrame(frame);
+      const featureCount = standardized[0].standardizedX.length;
+      const coefficients = Array(featureCount + 1).fill(0);
+      const learningRate = 0.08;
+      const ridge = 0.001;
+      const iterations = 900;
+
+      for (let iteration = 0; iteration < iterations; iteration += 1) {
+        const gradients = Array(featureCount + 1).fill(0);
+        standardized.forEach((row) => {
+          const x = [1, ...row.standardizedX];
+          const score = sigmoid(coefficients.reduce((sum, coefficient, index) => sum + coefficient * x[index], 0));
+          const error = score - row.actual;
+          x.forEach((value, index) => {
+            gradients[index] += error * value;
+          });
+        });
+
+        coefficients.forEach((coefficient, index) => {
+          const penalty = index === 0 ? 0 : ridge * coefficient;
+          coefficients[index] -= learningRate * ((gradients[index] / standardized.length) + penalty);
+        });
+      }
+
+      return {
+        coefficients,
+        rows: standardized.map((row) => {
+          const x = [1, ...row.standardizedX];
+          return {
+            ...row,
+            score: sigmoid(coefficients.reduce((sum, coefficient, index) => sum + coefficient * x[index], 0))
+          };
+        })
+      };
+    }
+
     function transpose(matrix) {
       return matrix[0].map((_, columnIndex) => matrix.map((row) => row[columnIndex]));
     }
@@ -1099,28 +1198,60 @@
     function runAnalysis() {
       const target = elements.targetColumn.value;
       const features = selectedFeatures();
+      const analysisType = elements.analysisType.value;
 
       if (!target || features.length === 0) {
         setStatus("Choose a target and at least one feature column.", true);
         return;
       }
 
-      const frame = buildModelFrame(target, features);
-      if (frame.length < features.length + 2) {
-        setStatus("Not enough complete numeric rows to fit this model.", true);
-        return;
-      }
-
       try {
+        if (analysisType === "risk") {
+          const frame = buildRiskFrame(target, features);
+          if (frame.length < features.length + 2) {
+            setStatus("Not enough complete numeric rows to fit this validation model.", true);
+            return;
+          }
+          const classes = new Set(frame.map((row) => row.actual));
+          if (classes.size < 2) {
+            setStatus("Risk validation needs two target classes after binary conversion.", true);
+            return;
+          }
+
+          const fitted = fitLogisticRegression(frame);
+          const metrics = calculateRiskMetrics(fitted.rows);
+          const scoredRows = fitted.rows.map((row, index) => ({
+            ...row,
+            decision: metrics.decisions[index]
+          }));
+          state.model = {
+            type: "risk",
+            target,
+            features,
+            coefficients: fitted.coefficients,
+            rows: scoredRows,
+            metrics
+          };
+          renderRiskResults(state.model);
+          setStatus(`Risk validation complete using ${frame.length} rows and ${features.length} features.`);
+          return;
+        }
+
+        const frame = buildModelFrame(target, features);
+        if (frame.length < features.length + 2) {
+          setStatus("Not enough complete numeric rows to fit this model.", true);
+          return;
+        }
+
         const coefficients = fitLinearRegression(frame);
         const predictions = frame.map((row) => ({
           ...row,
           predicted: predict(coefficients, row.x)
         }));
         const metrics = calculateMetrics(predictions);
-        state.model = { target, features, coefficients, predictions, metrics };
+        state.model = { type: "regression", target, features, coefficients, predictions, metrics };
         renderResults(state.model);
-        setStatus(`Analysis complete using ${frame.length} rows and ${features.length} features.`);
+        setStatus(`Regression analysis complete using ${frame.length} rows and ${features.length} features.`);
       } catch (error) {
         setStatus(`Model failed: ${error.message}`, true);
       }
@@ -1142,7 +1273,161 @@
       };
     }
 
+    function calculateRocAuc(actual, scores) {
+      const positives = actual.filter((value) => value === 1).length;
+      const negatives = actual.length - positives;
+      if (positives === 0 || negatives === 0) return NaN;
+
+      const ranked = scores
+        .map((score, index) => ({ score, actual: actual[index] }))
+        .sort((a, b) => a.score - b.score);
+      let rankSum = 0;
+      ranked.forEach((row, index) => {
+        if (row.actual === 1) rankSum += index + 1;
+      });
+      return (rankSum - (positives * (positives + 1)) / 2) / (positives * negatives);
+    }
+
+    function calculatePrAuc(actual, scores) {
+      const positives = actual.filter((value) => value === 1).length;
+      if (positives === 0) return NaN;
+
+      const sorted = scores
+        .map((score, index) => ({ score, actual: actual[index] }))
+        .sort((a, b) => b.score - a.score);
+      let tp = 0;
+      let fp = 0;
+      let previousRecall = 0;
+      let previousPrecision = 1;
+      let area = 0;
+
+      sorted.forEach((row) => {
+        if (row.actual === 1) tp += 1;
+        else fp += 1;
+        const recall = tp / positives;
+        const precision = tp / Math.max(tp + fp, 1);
+        area += (recall - previousRecall) * ((precision + previousPrecision) / 2);
+        previousRecall = recall;
+        previousPrecision = precision;
+      });
+
+      return area;
+    }
+
+    function calculateKsScore(actual, scores) {
+      const positives = actual.filter((value) => value === 1).length;
+      const negatives = actual.length - positives;
+      if (positives === 0 || negatives === 0) return NaN;
+
+      const sorted = scores
+        .map((score, index) => ({ score, actual: actual[index] }))
+        .sort((a, b) => b.score - a.score);
+      let tp = 0;
+      let fp = 0;
+      let best = 0;
+
+      sorted.forEach((row) => {
+        if (row.actual === 1) tp += 1;
+        else fp += 1;
+        best = Math.max(best, Math.abs((tp / positives) - (fp / negatives)));
+      });
+
+      return best;
+    }
+
+    function confusionMetrics(actual, scores, threshold) {
+      let tp = 0;
+      let fp = 0;
+      let tn = 0;
+      let fn = 0;
+
+      scores.forEach((score, index) => {
+        const predicted = score >= threshold ? 1 : 0;
+        if (actual[index] === 1 && predicted === 1) tp += 1;
+        if (actual[index] === 0 && predicted === 1) fp += 1;
+        if (actual[index] === 0 && predicted === 0) tn += 1;
+        if (actual[index] === 1 && predicted === 0) fn += 1;
+      });
+
+      const precision = tp + fp === 0 ? 0 : tp / (tp + fp);
+      const recall = tp + fn === 0 ? 0 : tp / (tp + fn);
+      const specificity = tn + fp === 0 ? 0 : tn / (tn + fp);
+      const f1 = precision + recall === 0 ? 0 : (2 * precision * recall) / (precision + recall);
+      return {
+        threshold,
+        tp,
+        fp,
+        tn,
+        fn,
+        accuracy: (tp + tn) / actual.length,
+        precision,
+        recall,
+        specificity,
+        f1
+      };
+    }
+
+    function tuneRiskThreshold(actual, scores) {
+      const candidates = Array.from({ length: 19 }, (_, index) => 0.05 + index * 0.05);
+      const rows = candidates.map((threshold) => confusionMetrics(actual, scores, threshold));
+      return rows.reduce((best, row) => (row.f1 > best.f1 ? row : best), rows[0]);
+    }
+
+    function calculatePsi(expectedScores, actualScores, bins = 10) {
+      if (expectedScores.length === 0 || actualScores.length === 0) return NaN;
+      const allScores = [...expectedScores, ...actualScores];
+      const min = Math.min(...allScores);
+      const max = Math.max(...allScores);
+      if (!Number.isFinite(min) || min === max) return 0;
+
+      const width = (max - min) / bins;
+      const bucket = (score) => Math.min(Math.floor((score - min) / width), bins - 1);
+      const expectedCounts = Array(bins).fill(0);
+      const actualCounts = Array(bins).fill(0);
+      expectedScores.forEach((score) => { expectedCounts[bucket(score)] += 1; });
+      actualScores.forEach((score) => { actualCounts[bucket(score)] += 1; });
+
+      return expectedCounts.reduce((sum, expectedCount, index) => {
+        const expectedPct = Math.max(expectedCount / expectedScores.length, 0.0001);
+        const actualPct = Math.max(actualCounts[index] / actualScores.length, 0.0001);
+        return sum + (actualPct - expectedPct) * Math.log(actualPct / expectedPct);
+      }, 0);
+    }
+
+    function assignDecision(score, investigateThreshold, rejectThreshold) {
+      if (score >= rejectThreshold) return "reject";
+      if (score >= investigateThreshold) return "investigate";
+      return "approve";
+    }
+
+    function calculateRiskMetrics(rows) {
+      const actual = rows.map((row) => row.actual);
+      const scores = rows.map((row) => row.score);
+      const tuned = tuneRiskThreshold(actual, scores);
+      const rejectThreshold = Math.max(0.8, Math.min(1, tuned.threshold + 0.1));
+      const decisions = rows.map((row) => assignDecision(row.score, tuned.threshold, rejectThreshold));
+      const positives = scores.filter((_, index) => actual[index] === 1);
+      const negatives = scores.filter((_, index) => actual[index] === 0);
+
+      return {
+        rocAuc: calculateRocAuc(actual, scores),
+        prAuc: calculatePrAuc(actual, scores),
+        ksScore: calculateKsScore(actual, scores),
+        psi: calculatePsi(negatives, positives),
+        threshold: tuned.threshold,
+        rejectThreshold,
+        confusion: tuned,
+        decisions
+      };
+    }
+
     function renderResults(model) {
+      elements.chartTitle.textContent = "Actual vs predicted";
+      elements.chartSubtitle.textContent = "Points closer to the diagonal line indicate better predictions.";
+      elements.coefficientsTitle.textContent = "Model coefficients";
+      elements.coefficientsSubtitle.textContent = "Estimated contribution for the intercept and selected features.";
+      elements.predictionTitle.textContent = "Prediction preview";
+      elements.predictionSubtitle.textContent = "First rows from the scored dataset.";
       elements.metricsGrid.innerHTML = `
         <article class="metric-card"><span>Rows</span><strong>${model.predictions.length}</strong><p>Used in model</p></article>
         <article class="metric-card"><span>Features</span><strong>${model.features.length}</strong><p>${escapeHtml(model.features.join(", "))}</p></article>
@@ -1152,6 +1437,80 @@
       renderCoefficients(model);
       renderPredictionTable(model);
       drawChart(model.predictions);
+    }
+
+    function renderRiskResults(model) {
+      const metrics = model.metrics;
+      const decisions = model.rows.reduce((counts, row) => {
+        counts[row.decision] = (counts[row.decision] || 0) + 1;
+        return counts;
+      }, {});
+
+      elements.chartTitle.textContent = "Risk score distribution";
+      elements.chartSubtitle.textContent = "Scores at or above the tuned threshold move into review.";
+      elements.coefficientsTitle.textContent = "Feature importance";
+      elements.coefficientsSubtitle.textContent = "Logistic coefficients ranked by absolute contribution.";
+      elements.predictionTitle.textContent = "Decision preview";
+      elements.predictionSubtitle.textContent = "First rows from the scored risk dataset.";
+
+      elements.metricsGrid.innerHTML = `
+        <article class="metric-card"><span>ROC-AUC</span><strong>${formatNumber(metrics.rocAuc)}</strong><p>Ranking quality</p></article>
+        <article class="metric-card"><span>PR-AUC</span><strong>${formatNumber(metrics.prAuc)}</strong><p>Positive-class lift</p></article>
+        <article class="metric-card"><span>KS</span><strong>${formatNumber(metrics.ksScore)}</strong><p>Score separation</p></article>
+        <article class="metric-card"><span>PSI</span><strong>${formatNumber(metrics.psi)}</strong><p>Score stability</p></article>
+      `;
+
+      renderRiskImportance(model);
+      renderRiskDecisionTable(model, decisions);
+      drawRiskChart(model.rows, metrics.threshold, metrics.rejectThreshold);
+    }
+
+    function renderRiskImportance(model) {
+      const importance = model.features.map((feature, index) => ({
+        feature,
+        coefficient: model.coefficients[index + 1],
+        importance: Math.abs(model.coefficients[index + 1])
+      })).sort((a, b) => b.importance - a.importance);
+
+      const rows = importance.map((row) => `
+        <tr>
+          <td>${escapeHtml(row.feature)}</td>
+          <td>${formatNumber(row.importance)}</td>
+          <td>${formatNumber(row.coefficient)}</td>
+        </tr>
+      `).join("");
+
+      elements.coefficients.className = "table-wrap";
+      elements.coefficients.innerHTML = `
+        <table>
+          <thead><tr><th>Feature</th><th>Importance</th><th>Coefficient</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    function renderRiskDecisionTable(model, decisions) {
+      const confusion = model.metrics.confusion;
+      const rows = model.rows.slice(0, 12).map((row, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${row.actual}</td>
+          <td>${formatNumber(row.score)}</td>
+          <td>${escapeHtml(row.decision)}</td>
+        </tr>
+      `).join("");
+
+      elements.predictionTable.className = "table-wrap";
+      elements.predictionTable.innerHTML = `
+        <table>
+          <thead><tr><th>#</th><th>Actual risk</th><th>Score</th><th>Decision</th></tr></thead>
+          <tbody>
+            <tr><td>Threshold</td><td>${formatNumber(model.metrics.threshold)}</td><td>Reject ${formatNumber(model.metrics.rejectThreshold)}</td><td>${escapeHtml(Object.entries(decisions).map(([key, value]) => `${key}: ${value}`).join(", "))}</td></tr>
+            <tr><td>Matrix</td><td>TP ${confusion.tp} / FP ${confusion.fp}</td><td>TN ${confusion.tn} / FN ${confusion.fn}</td><td>F1 ${formatNumber(confusion.f1)}</td></tr>
+            ${rows}
+          </tbody>
+        </table>
+      `;
     }
 
     function renderCoefficients(model) {
@@ -1253,17 +1612,102 @@
       ctx.fillText(formatNumber(max), width - padding - 30, height - padding + 22);
     }
 
+    function drawRiskChart(rows, investigateThreshold, rejectThreshold) {
+      const canvas = elements.chart;
+      const ctx = canvas.getContext("2d");
+      const width = canvas.width;
+      const height = canvas.height;
+      const padding = 54;
+      const bins = 10;
+      const bucketCounts = Array.from({ length: bins }, () => ({ good: 0, risk: 0 }));
+
+      rows.forEach((row) => {
+        const bucket = Math.min(Math.floor(row.score * bins), bins - 1);
+        if (row.actual === 1) bucketCounts[bucket].risk += 1;
+        else bucketCounts[bucket].good += 1;
+      });
+
+      const maxCount = Math.max(...bucketCounts.map((bucket) => bucket.good + bucket.risk), 1);
+      const plotWidth = width - padding * 2;
+      const plotHeight = height - padding * 2;
+      const barWidth = plotWidth / bins;
+
+      ctx.clearRect(0, 0, width, height);
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.18)";
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i += 1) {
+        const y = padding + (i / 4) * plotHeight;
+        ctx.beginPath();
+        ctx.moveTo(padding, y);
+        ctx.lineTo(width - padding, y);
+        ctx.stroke();
+      }
+
+      bucketCounts.forEach((bucket, index) => {
+        const x = padding + index * barWidth + 4;
+        const goodHeight = (bucket.good / maxCount) * plotHeight;
+        const riskHeight = (bucket.risk / maxCount) * plotHeight;
+        const baseY = height - padding;
+
+        ctx.fillStyle = "rgba(56, 189, 248, 0.72)";
+        ctx.fillRect(x, baseY - goodHeight, barWidth - 8, goodHeight);
+        ctx.fillStyle = "rgba(251, 113, 133, 0.78)";
+        ctx.fillRect(x, baseY - goodHeight - riskHeight, barWidth - 8, riskHeight);
+      });
+
+      [
+        { value: investigateThreshold, label: "Investigate", color: "rgba(251, 191, 36, 0.95)" },
+        { value: rejectThreshold, label: "Reject", color: "rgba(251, 113, 133, 0.95)" }
+      ].forEach((threshold) => {
+        const x = padding + threshold.value * plotWidth;
+        ctx.strokeStyle = threshold.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x, padding);
+        ctx.lineTo(x, height - padding);
+        ctx.stroke();
+        ctx.fillStyle = threshold.color;
+        ctx.font = "13px Inter, system-ui, sans-serif";
+        ctx.fillText(threshold.label, x + 6, padding + 18);
+      });
+
+      ctx.fillStyle = "rgba(229, 231, 235, 0.88)";
+      ctx.font = "13px Inter, system-ui, sans-serif";
+      ctx.fillText("Risk score", width / 2 - 28, height - 16);
+      ctx.fillStyle = "rgba(148, 163, 184, 0.9)";
+      ctx.fillText("0", padding - 4, height - padding + 22);
+      ctx.fillText("1", width - padding - 4, height - padding + 22);
+    }
+
     function clearResults() {
-      elements.metricsGrid.innerHTML = `
+      const isRisk = elements.analysisType.value === "risk";
+      elements.chartTitle.textContent = isRisk ? "Risk score distribution" : "Actual vs predicted";
+      elements.chartSubtitle.textContent = isRisk
+        ? "Scores at or above the tuned threshold move into review."
+        : "Points closer to the diagonal line indicate better predictions.";
+      elements.coefficientsTitle.textContent = isRisk ? "Feature importance" : "Model coefficients";
+      elements.coefficientsSubtitle.textContent = isRisk
+        ? "Logistic coefficients ranked by absolute contribution."
+        : "Estimated contribution for the intercept and selected features.";
+      elements.predictionTitle.textContent = isRisk ? "Decision preview" : "Prediction preview";
+      elements.predictionSubtitle.textContent = isRisk ? "First rows from the scored risk dataset." : "First rows from the scored dataset.";
+      elements.runModel.textContent = isRisk ? "Run validation" : "Run analysis";
+
+      elements.metricsGrid.innerHTML = isRisk ? `
+        <article class="metric-card"><span>Rows</span><strong>${state.rows.length || "—"}</strong><p>Loaded observations</p></article>
+        <article class="metric-card"><span>ROC-AUC</span><strong>—</strong><p>Ranking quality</p></article>
+        <article class="metric-card"><span>KS</span><strong>—</strong><p>Score separation</p></article>
+        <article class="metric-card"><span>PSI</span><strong>—</strong><p>Score stability</p></article>
+      ` : `
         <article class="metric-card"><span>Rows</span><strong>${state.rows.length || "—"}</strong><p>Loaded observations</p></article>
         <article class="metric-card"><span>Features</span><strong>—</strong><p>Selected predictors</p></article>
         <article class="metric-card"><span>RMSE</span><strong>—</strong><p>Prediction error</p></article>
         <article class="metric-card"><span>R²</span><strong>—</strong><p>Explained variance</p></article>
       `;
       elements.coefficients.className = "empty-state";
-      elements.coefficients.textContent = "Run an analysis to view coefficients.";
+      elements.coefficients.textContent = isRisk ? "Run validation to view feature importance." : "Run an analysis to view coefficients.";
       elements.predictionTable.className = "empty-state";
-      elements.predictionTable.textContent = "Predictions will appear here after the model runs.";
+      elements.predictionTable.textContent = isRisk ? "Decisions will appear here after validation runs." : "Predictions will appear here after the model runs.";
       const ctx = elements.chart.getContext("2d");
       ctx.clearRect(0, 0, elements.chart.width, elements.chart.height);
     }
@@ -1313,6 +1757,7 @@
       renderFeatureList();
       clearResults();
     });
+    elements.analysisType.addEventListener("change", clearResults);
     elements.runModel.addEventListener("click", runAnalysis);
     elements.resetDashboard.addEventListener("click", () => resetState(true));
     elements.copyCommandsHero?.addEventListener("click", copyCommands);
