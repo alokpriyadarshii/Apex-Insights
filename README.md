@@ -1,6 +1,6 @@
 # Apex-Insights
 
-A reproducible analytics and lakehouse project that combines the original R reporting workflow with a Python + PySpark data platform pipeline. It ingests finance-style raw data, builds bronze/silver/gold datasets, writes optimized Parquet outputs, runs automated data quality controls, reconciles layer totals, and adds fraud/credit-risk model validation with threshold tuning, score stability, feature importance, and review decision rules.
+A reproducible analytics and lakehouse project that combines the original R reporting workflow with a Python + PySpark data platform pipeline. It ingests finance style raw data, builds bronze/silver/gold datasets, writes optimized Parquet outputs, runs automated data quality controls, reconciles layer totals, and adds fraud/credit risk model validation with threshold tuning, score stability, feature importance, and review decision rules.
 
 ## Preview
 
