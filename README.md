@@ -10,6 +10,10 @@ A reproducible analytics and lakehouse project that combines the original R repo
 
 <img src="./images/apex-insights-preview-3.png" alt="apex-insights Preview 3" width="100%" />
 
+<img src="./images/apex-insights-preview-4.png" alt="apex-insights Preview 3" width="100%" />
+
+<img src="./images/apex-insights-preview-5.png" alt="apex-insights Preview 3" width="100%" />
+
 ## Frontend Dashboard
 
 This project includes a static frontend in `public/index.html` for quick demos and portfolio deployment. The dashboard lets you upload a CSV file, load the bundled sample dataset, choose target and feature columns, run a baseline linear regression in JavaScript, and view metrics, coefficients, predictions, and an actual-vs-predicted chart.
@@ -98,27 +102,32 @@ After a successful PySpark pipeline run:
 
 ```text
 Apex-Insights/
-├── .github/workflows/ci.yml
-├── artifacts/
-│   ├── data/preds.rds
-│   ├── lakehouse/
-│   │   ├── bronze/
-│   │   ├── silver/
-│   │   └── gold/
-│   ├── models/model.rds
-│   ├── reconciliation/
-│   └── reports/
-├── data/raw/
-│   ├── accounts.csv
-│   ├── customers.json
-│   ├── input.csv
-│   ├── merchant_categories.csv
-│   ├── risk_scores.csv
-│   └── transactions.csv
-├── docs/performance_optimization.md
-├── public/index.html
+├── .github/
+│   └── workflows/
+│       └── ci.yml
 ├── R/
-├── reports/report.qmd
+│   ├── clean.R
+│   ├── features.R
+│   ├── io_read.R
+│   ├── io_write.R
+│   ├── logging.R
+│   ├── model_score.R
+│   ├── model_train.R
+│   ├── model_validation.R
+│   ├── utils.R
+│   └── validate.R
+├── src/
+│   └── apex_insights/
+│       ├── __init__.py
+│       ├── __main__.py
+│       ├── config.py
+│       ├── ingest.py
+│       ├── model.py
+│       ├── pipeline.py
+│       ├── quality.py
+│       ├── reconcile.py
+│       ├── transform.py
+│       └── write.py
 ├── sql/
 │   ├── 01_create_tables.sql
 │   ├── 02_data_quality_checks.sql
@@ -126,25 +135,101 @@ Apex-Insights/
 │   ├── 04_customer_monthly_summary.sql
 │   ├── 05_window_functions.sql
 │   └── 06_optimization_notes.sql
-├── src/apex_insights/
-│   ├── config.py
-│   ├── ingest.py
-│   ├── model.py
-│   ├── pipeline.py
-│   ├── quality.py
-│   ├── reconcile.py
-│   ├── transform.py
-│   └── write.py
+├── data/
+│   ├── external/
+│   │   └── .gitkeep
+│   └── raw/
+│       ├── accounts.csv
+│       ├── customers.json
+│       ├── input.csv
+│       ├── merchant_categories.csv
+│       ├── risk_scores.csv
+│       └── transactions.csv
 ├── tests/
 │   ├── python/
-│   └── testthat/
-├── docker-compose.yml
+│   │   └── test_pipeline_contract.py
+│   ├── testthat/
+│   │   ├── helper-source.R
+│   │   ├── test-clean.R
+│   │   ├── test-model-validation.R
+│   │   └── tests/
+│   │       └── testthat/
+│   │           └── test-model-train.R
+│   └── testthat.R
+├── public/
+│   └── index.html
+├── images/
+│   ├── apex-insights-preview-1.png
+│   ├── apex-insights-preview-2.png
+│   ├── apex-insights-preview-3.png
+│   ├── apex-insights-preview-4.png
+│   └── apex-insights-preview-5.png
+├── artifacts/
+│   ├── .gitkeep
+│   ├── data/
+│   │   ├── .gitkeep
+│   │   └── preds.rds
+│   └── models/
+│       ├── .gitkeep
+│       └── model.rds
+├── renv/
+│   ├── .gitignore
+│   └── activate.R
+├── .Rprofile
+├── .gitignore
+├── .lintr
+├── .mailmap
+├── _targets.R
+├── config.yml
 ├── Dockerfile
+├── docker-compose.yml
+├── LICENSE
 ├── Makefile
 ├── pyproject.toml
-├── requirements.txt
+├── README.md
 ├── renv.lock
+├── requirements.txt
 └── vercel.json
+```
+
+## Runtime Generated Outputs
+
+```text
+artifacts/
+├── data/
+│   └── preds.rds
+├── models/
+│   └── model.rds
+├── lakehouse/
+│   ├── bronze/
+│   ├── silver/
+│   └── gold/
+├── reports/
+│   ├── data_quality_report.json
+│   ├── data_quality_report.md
+│   └── model_validation_report.md
+└── reconciliation/
+    └── reconciliation_report.csv
+```
+
+## Generated Outputs
+
+```text
+artifacts/
+├── data/
+│   └── preds.rds
+├── models/
+│   └── model.rds
+├── lakehouse/
+│   ├── bronze/
+│   ├── silver/
+│   └── gold/
+├── reports/
+│   ├── data_quality_report.json
+│   ├── data_quality_report.md
+│   └── model_validation_report.md
+└── reconciliation/
+    └── reconciliation_report.csv
 ```
 
 ## Requirements
