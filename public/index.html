@@ -51,43 +51,6 @@
       margin: 0 auto;
     }
 
-    .nav {
-      position: sticky;
-      top: 0;
-      z-index: 20;
-      backdrop-filter: blur(20px);
-      background: rgba(7, 17, 31, 0.78);
-      border-bottom: 1px solid var(--line);
-    }
-
-    .nav-inner {
-      height: 72px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 20px;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-weight: 800;
-      letter-spacing: -0.03em;
-    }
-
-    .brand-mark {
-      width: 40px;
-      height: 40px;
-      border-radius: 14px;
-      display: grid;
-      place-items: center;
-      background: linear-gradient(135deg, var(--brand), var(--brand-2));
-      color: #020617;
-      box-shadow: 0 14px 36px rgba(56, 189, 248, 0.28);
-      font-weight: 900;
-    }
-
     .hero {
       padding: 78px 0 36px;
       display: grid;
@@ -532,13 +495,6 @@
     }
 
     @media (max-width: 680px) {
-      .nav-inner {
-        height: auto;
-        padding: 14px 0;
-        align-items: flex-start;
-        flex-direction: column;
-      }
-
       .hero {
         padding-top: 46px;
       }
@@ -583,10 +539,6 @@
         linear-gradient(135deg, #16060e 0%, #2a0d18 54%, #3b0d1d 100%);
     }
 
-    .nav {
-      background: rgba(28, 8, 17, 0.86);
-    }
-
     .hero {
       grid-template-columns: 1fr;
       padding: 68px 0 28px;
@@ -596,7 +548,6 @@
       max-width: 880px;
     }
 
-    .brand-mark,
     .button.primary {
       background: linear-gradient(135deg, var(--brand), var(--brand-2));
       color: #fff7f8;
@@ -662,15 +613,6 @@
   </style>
 </head>
 <body>
-  <nav class="nav">
-    <div class="shell nav-inner">
-      <a class="brand" href="#top" aria-label="Apex Insights home">
-        <span class="brand-mark">AI</span>
-        <span>Apex Insights</span>
-      </a>
-    </div>
-  </nav>
-
   <main id="top">
     <section class="shell hero">
       <div>
